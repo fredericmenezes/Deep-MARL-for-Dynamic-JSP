@@ -269,7 +269,7 @@ class brain:
         self.correspondence_idx.append(arriving_j_idx)
         s_t.append(arriving_job_info)
         '''STEP 3: finally, convert list to tensor and output it'''
-        s_t = torch.FloatTensor(s_t)
+        s_t = torch.FloatTensor(np.array(s_t))
         #print('state:',s_t)
         return s_t
 
@@ -481,6 +481,71 @@ class brain:
         print('Utilization rate:',self.job_creator.E_utliz)
         print('----------------------------------------------------')
 
+    def loss_record_output(self,**kwargs):
+        fig = plt.figure(figsize=(10,5.5))
+        loss_record = fig.add_subplot(1,1,1)
+        loss_record.set_xlabel('Iterations of training ('+r'$\times 10^3$'+')')
+        loss_record.set_ylabel('Loss of training')
+        iterations = np.arange(len(self.loss_record))
+        loss_record.scatter(iterations, self.loss_record,s=1,color='r', alpha=0.3,zorder=3)
+        # moving average
+        x = 50
+        loss_record.plot(np.arange(x/2,len(self.loss_record)-x/2+1,1),np.convolve(self.loss_record, np.ones(x)/x, mode='valid'),color='k',label='moving average')
+        # limits, grids,
+        ylim=0.25
+        loss_record.set_xlim(0,len(self.loss_record))
+        loss_record.set_ylim(0.05,ylim)
+        xtick_interval = 1000
+        loss_record.set_xticks(np.arange(0,len(self.loss_record)+1,xtick_interval))
+        loss_record.set_xticklabels(np.arange(0,len(self.loss_record)/xtick_interval,1).astype(int),rotation=30, ha='right', rotation_mode="anchor", fontsize=8.5)
+        loss_record.set_yticks(np.arange(0.05, ylim+0.01, 0.01))
+        loss_record.grid(axis='x', which='major', alpha=0.5, zorder=0, )
+        loss_record.grid(axis='y', which='major', alpha=0.5, zorder=0, )
+        loss_record.legend()
+        # dual axis
+        ax_time = loss_record.twiny()
+        ax_time.set_xlabel('Time in simulation ('+r'$\times 10^3$'+', excluding warm up phase)')
+        ax_time.set_xlim(self.warm_up,self.span)
+        ax_time.set_xticks(np.arange(self.warm_up,self.span+1,xtick_interval*2))
+        ax_time.set_xticklabels(np.arange(self.warm_up/xtick_interval,self.span/xtick_interval+1,2).astype(int),rotation=30, ha='left', rotation_mode="anchor", fontsize=8.5)
+        loss_record.set_title("Sequencing Agent Training Loss / {}-operation test".format(len(self.job_creator.m_list)))
+        fig.subplots_adjust(top=0.8, bottom=0.1, right=0.9)
+        plt.show()
+        # save the figure if required
+        if 'save' in kwargs and kwargs['save']:
+            address = sys.path[0]+"//experiment_result//SA_loss_{}m.png".format(len(self.m_list))
+            fig.savefig(address, dpi=500, bbox_inches='tight')
+            print('figure saved to'+address)
+        return
+
+    def reward_record_output(self,**kwargs):
+        fig = plt.figure(figsize=(10,5.5))
+        reward_record = fig.add_subplot(1,1,1)
+        reward_record.set_xlabel('Time')
+        reward_record.set_ylabel('Reward')
+        time = np.array(self.job_creator.reward_record).transpose()[0]
+        rewards = np.array(self.job_creator.reward_record).transpose()[1]
+        #print(time, rewards)
+        reward_record.scatter(time, rewards, s=1,color='g', alpha=0.3, zorder=3)
+        reward_record.set_xlim(0,self.span)
+        reward_record.set_ylim(-1.1,1.1)
+        xtick_interval = 2000
+        reward_record.set_xticks(np.arange(0,self.span+1,xtick_interval))
+        reward_record.set_xticklabels(np.arange(0,self.span+1,xtick_interval),rotation=30, ha='right', rotation_mode="anchor", fontsize=8.5)
+        reward_record.set_yticks(np.arange(-1, 1, 0.1))
+        reward_record.grid(axis='x', which='major', alpha=0.5, zorder=0, )
+        reward_record.grid(axis='y', which='major', alpha=0.5, zorder=0, )
+        # moving average
+        x = 50
+        print(len(time))
+        reward_record.plot(time[int(x/2):len(time)-int(x/2)+1],np.convolve(rewards, np.ones(x)/x, mode='valid'),color='k',label="moving average")
+        reward_record.legend()
+        plt.show()
+        # save the figure if required
+        fig.subplots_adjust(top=0.5, bottom=0.5, right=0.9)
+        if 'save' in kwargs and kwargs['save']:
+            fig.savefig(sys.path[0]+"//experiment_result//SA_reward_{}m.png".format(len(self.m_list)), dpi=500, bbox_inches='tight')
+        return
 
 '''
 class of sequencing functions to kick-off the training (optional)

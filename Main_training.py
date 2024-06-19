@@ -44,8 +44,8 @@ class shopfloor:
     def simulation(self):
         self.env.run()
         self.brain.check_parameter()
-        self.brain.loss_record_output(save=0)
-        #self.brain.reward_record_output(save=0)
+        # self.brain.loss_record_output(save=0)
+        # self.brain.reward_record_output(save=0)
 
 
 
